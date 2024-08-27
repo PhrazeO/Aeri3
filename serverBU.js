@@ -1,7 +1,7 @@
 const express = require('express');
 const { MongoClient, ObjectId } = require('mongodb');
 const cors = require('cors');
-// const bcrypt = require('bcrypt'); // Comment out bcrypt
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const app = express();
 const port = 5000;
@@ -36,8 +36,8 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ message: 'Email is already registered' });
     }
 
-    // Temporarily use the password as is (not hashed)
-    const hashedPassword = password; // Replace bcrypt.hash with plain password
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insert new user into the database
     await collection.insertOne({
@@ -68,8 +68,7 @@ app.post('/api/login', async (req, res) => {
     const collection = db.collection(collectionName2);
     const user = await collection.findOne({ email });
 
-    // Check if user exists and validate password (temporarily using plain password comparison)
-    if (user && user.password === password) { // Replace bcrypt.compare with plain comparison
+    if (user && await bcrypt.compare(password, user.password)) {
       // Generate a JWT token
       const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '1h' });
       res.status(200).json({ token }); // Send the token to the client
@@ -165,7 +164,8 @@ app.post('/api/save-score', async (req, res) => {
   }
 });
 
-// Save vacature
+// 
+
 app.post('/api/save-vacature', async (req, res) => {
   const { vacatureidnumber, date } = req.body;
   const authHeader = req.headers.authorization;
@@ -221,8 +221,8 @@ app.post('/api/save-vacature', async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+//
 
-// Toggle save vacature
 app.post('/api/toggle-save-vacature', async (req, res) => {
   const { vacatureidnumber, date } = req.body;
   const authHeader = req.headers.authorization;
@@ -285,7 +285,8 @@ app.post('/api/toggle-save-vacature', async (req, res) => {
   }
 });
 
-// Check if a vacature is saved
+
+// Backend: Check if a vacature is saved for the logged-in user
 app.get('/api/check-saved-vacature/:vacatureId', async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
@@ -322,8 +323,8 @@ app.get('/api/check-saved-vacature/:vacatureId', async (req, res) => {
     }
   }
 });
-
-// Fetch saved vacatures
+//
+// Backend endpoint to get saved vacatures
 app.get('/api/saved-vacatures', async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
@@ -356,7 +357,10 @@ app.get('/api/saved-vacatures', async (req, res) => {
   }
 });
 
-// Fetch user quizzes
+
+
+
+//
 app.get('/api/user-quizzes', async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1];
@@ -386,6 +390,7 @@ app.get('/api/user-quizzes', async (req, res) => {
   }
 });
 
+
 // Fetch Country Data from MongoDB
 app.get('/api/countries', async (req, res) => {
   const client = new MongoClient(uri);
@@ -405,7 +410,8 @@ app.get('/api/countries', async (req, res) => {
   }
 });
 
-// Fetch Vacature Data from MongoDB
+
+
 app.get('/api/vacatures', async (req, res) => {
   const client = new MongoClient(uri);
 
@@ -424,6 +430,10 @@ app.get('/api/vacatures', async (req, res) => {
     await client.close();
   }
 });
+
+
+
+
 
 // New Endpoint to Fetch User Details
 app.get('/api/user', async (req, res) => {
